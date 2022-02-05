@@ -8,9 +8,9 @@ type GridItem =
     | LineBreak
 
 type Grid = {
-    Row        : int
-    Column     : int
-    Items : GridItem list
+    Row    : int
+    Column : int
+    Items  : GridItem list
 }
 
 module GridItem =
@@ -30,9 +30,22 @@ module GridItem =
             |> sprintf "%c "
             |> printColored (Option.defaultValue Console.ForegroundColor maybeColor)
 
+    let charToCharacter (color: option<ConsoleColor>) (c: char) : GridItem =
+        Character (c, color)
 
-let charToCharacter (c: char) : GridItem =
-    Character (c, None)
+
+let stringToGridRow (s: string) : list<GridItem> =
+    s
+    |> Seq.map (fun c -> GridItem.charToCharacter None c)
+    |> List.ofSeq
+    |> fun li -> li @ [LineBreak]
+
+let stringAllGreen (s: string) : list<GridItem> =
+    s
+    |> Seq.map (fun c -> GridItem.charToCharacter (Some ConsoleColor.Green) c)
+    |> List.ofSeq
+    |> fun li -> li @ [LineBreak]
+
 
 let generateInitialGrid (row: int) (column: int): Grid =
     {   
@@ -40,15 +53,26 @@ let generateInitialGrid (row: int) (column: int): Grid =
         Column = column
         Items =
             '*'
-            |> charToCharacter
+            |> GridItem.charToCharacter None
             |> GridItem.replicate column
-            |> List.append [LineBreak]
+            |> fun li -> li @ [LineBreak]
             |> GridItem.replicateList row
     }
 
-    
+let updateGrid (currentRound: int) (current: Grid) (row: list<GridItem>) : Grid =
+    {
+        current with
+            Items =
+                current.Items
+                |> fun li ->
+                    (List.take (currentRound * row.Length) li)
+                    @ row
+                    @ (List.skip ((currentRound + 1) * row.Length) li)
+    }
 
-
-let printGrid (grid: Grid) =
+let printGrid (grid: Grid) : Grid =
+    printfn ""
     grid.Items
     |> List.iter GridItem.print
+
+    grid

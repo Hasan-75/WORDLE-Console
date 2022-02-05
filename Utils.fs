@@ -10,6 +10,15 @@ type Config = {
     WordLength   : int
 }
 
+type ValidationError =
+    | InvalidWordLength
+    | InvalidCharacter
+    | NotExistInDictionary
+
+type ValidationResult =
+    | Ok
+    | Error of ValidationError
+
 let printColored (color: ConsoleColor) (text: string) =
     Console.ForegroundColor <- color
     printf "%s" text
@@ -25,3 +34,19 @@ let loadFile (path: string) : seq<string> =
 
 let capitalize (text: string) : string =
     text.ToUpper()
+
+let input() : string =
+    "Input your guess:\n"
+    |> printColored ConsoleColor.Cyan
+    System.Console.ReadLine()
+
+let containsAlphabetsOnly (text: string) : bool =
+    text
+    |> Seq.forall (fun c -> System.Char.IsLetter(c))
+
+let allUniqueChar (text: string) : bool =
+    text
+    |> seq
+    |> Set.ofSeq
+    |> Set.count
+    |> (=) text.Length
