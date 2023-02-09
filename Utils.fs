@@ -44,9 +44,14 @@ let containsAlphabetsOnly (text: string) : bool =
     text
     |> Seq.forall (fun c -> System.Char.IsLetter(c))
 
-let allUniqueChar (text: string) : bool =
+let doesContainUniqueCharacters (text: string) : bool =
     text
     |> seq
     |> Set.ofSeq
     |> Set.count
     |> (=) text.Length
+
+let stringToCharIndexMap (str: string) : Map<char, int> =
+    str
+    |> Seq.mapi (fun i c -> c, i)
+    |> Map.ofSeq

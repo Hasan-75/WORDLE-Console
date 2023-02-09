@@ -2,25 +2,22 @@
 
 open Utils
 open Grid
+open GridItem
 open System
 
-let config : Config =
-    {   WordFilePath = "./Resources/words_alpha.txt"
-        RowNumber = 6
-        ColumnNumber = 5
-        WordLength = 5
-    }
-
 type Result =
-    | Solved of round: int
-    | StillOn
+    | Solved  of round: int
+    | StillOn of round: int
     | Lost
 
-let loadWords : seq<string> =
-    config.WordFilePath
+let loadWords (filePath: string) (wordLength: int) : seq<string> =
+    filePath
     |> loadFile
     |> Seq.filter
-        (fun w -> w.Length = config.WordLength && (allUniqueChar w))
+        (fun w ->
+            w.Length = wordLength
+            && (doesContainUniqueCharacters w)
+        )
     |> Seq.map capitalize
 
 let validate (wordList: list<string>) (word: string) : ValidationResult =
@@ -45,71 +42,89 @@ let chooseRandomWord (words: list<string>) : string=
     |> List.item randomIndex
     |> capitalize
 
-let calculateColor (answer: string) (guess: string) : list<GridItem> =
-    let ansChars = answer |> seq |> List.ofSeq
+let calculateColor (answerCharIndexMap: Map<char, int>) (guess: string) : list<GridItem> =
+
+    let guessCharIndexMap = stringToCharIndexMap guess
 
     guess
     |> stringToGridRow
-    |> List.mapi (
-        fun i x ->
-            match x with
+    |> List.map (
+        fun gridItem ->
+            match gridItem with
             | LineBreak -> LineBreak
             | Character (c, _) ->
-                ansChars
-                |> Seq.contains c
-                |> function
-                    | true ->
-                        let ansCharAtCurrentPos = List.item i ansChars
-                        match c = ansCharAtCurrentPos with
-                        | true -> GridItem.charToCharacter (Some ConsoleColor.Green) c
-                        | false -> GridItem.charToCharacter (Some ConsoleColor.Yellow) c
+                let maybeIndexInAnswer = Map.tryFind c answerCharIndexMap
+                let maybeIndexInGuess  = Map.tryFind c guessCharIndexMap
 
-                    | false -> GridItem.charToCharacter (Some ConsoleColor.DarkGray) c
+                (maybeIndexInAnswer, maybeIndexInGuess)
+                ||> Option.map2 (
+                    fun indexInAnswer indexInGuess ->
+                        match indexInAnswer = indexInGuess with
+                        | true  -> GridItem.charToGreenCharacter c
+                        | false -> GridItem.charToYellowCharacter c
+                )
+                |> Option.defaultValue (GridItem.charToGrayCharacter c)
         )
 
-let calculateResult (guess: string) (answer: string) (playedRound: int) (totalRound: int) (grid: Grid) =
+let calculateResult (guess: string) (answer: string) (playedRound: int) (totalRound: int) =
     match guess = answer with
-    | true -> grid, Solved playedRound
+    | true  -> Solved playedRound
     | false ->
         match (playedRound + 1) >= totalRound with
-        | true -> grid, Lost
-        | false -> grid, StillOn
+        | true  -> Lost
+        | false -> StillOn playedRound
 
-let rec nextRound (answer: string) (currentRound: int) (totalRound: int) (wordList: list<string>) (currentGrid: Grid) : Result =
-    printfn ""
+let startRound (wordLength: int) (answer: string) (totalRound: int) (wordList: list<string>) (currentGrid: Grid) : Result =
 
-    let guess =
-        input()
-        |> capitalize
+    let answerCharIndexMap =
+        answer
+        |> stringToCharIndexMap
 
-    match validate wordList guess with
-    | Ok ->
-        guess
-        |> calculateColor answer
-        |> updateGrid currentRound currentGrid
-        |> printGrid
-        |> calculateResult guess answer currentRound totalRound
-        |> function
-            | _, Solved r -> Solved r
-            | grid, StillOn -> grid |> nextRound answer (currentRound + 1) totalRound wordList
-            | _, Lost -> Lost
+    let rec nextRound (currentRound: int) (currentGrid: Grid) =
+        let guess =
+            input()
+            |> capitalize
 
-    | Error e->
-        match e with
-        | InvalidWordLength ->
-            printError (sprintf "Your guess should have exact %i letters\n" config.WordLength)
-        | InvalidCharacter ->
-            printError "Your guess should have alphabets only\n"
-        | NotExistInDictionary ->
-            printError "This word doesn't exist in game's dictionary\n"
-        nextRound answer currentRound totalRound wordList currentGrid
+        match validate wordList guess with
+        | Ok ->
+            let updatedGrid =
+                guess
+                |> calculateColor answerCharIndexMap
+                |> updateGrid currentRound currentGrid
+                |> printGrid
 
+            calculateResult guess answer currentRound totalRound
+            |> function
+                | Solved round  -> Solved round
+                | StillOn round -> nextRound (round + 1) updatedGrid
+                | Lost          -> Lost
+
+        | Error e->
+            match e with
+            | InvalidWordLength ->
+                printError (sprintf "Your guess should have exact %i letters\n" wordLength)
+            | InvalidCharacter ->
+                printError "Your guess should have alphabets only\n"
+            | NotExistInDictionary ->
+                printError "This word doesn't exist in game's dictionary\n"
+
+            nextRound currentRound currentGrid
+
+    nextRound 0 currentGrid
 
 let startGame() : unit =
     printfn "Game started... \n"
 
+    let config : Config =
+        {
+            WordFilePath = "./Resources/words_alpha.txt"
+            RowNumber    = 6
+            ColumnNumber = 5
+            WordLength   = 5
+        }
+
     let wordList =
-        loadWords
+        loadWords config.WordFilePath config.WordLength
         |> List.ofSeq
 
     let randomWord =
@@ -122,7 +137,7 @@ let startGame() : unit =
 
     let result =
         grid
-        |> nextRound randomWord 0 config.RowNumber wordList
+        |> startRound config.WordLength randomWord config.RowNumber wordList
 
     match result with
     | Solved r ->
