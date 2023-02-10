@@ -18,7 +18,7 @@ let replicateList (count: int) (li: list<GridItem>) : list<GridItem> =
 let print (item: GridItem) =
     match item with
     | LineBreak -> printfn ""
-    |Character (char, maybeColor) ->
+    | Character (char, maybeColor) ->
         char
         |> sprintf "%c "
         |> printColored (Option.defaultValue Console.ForegroundColor maybeColor)

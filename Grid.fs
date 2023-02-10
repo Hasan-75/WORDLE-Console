@@ -38,8 +38,35 @@ let updateGrid (currentRound: int) (current: Grid) (row: list<GridItem>) : Grid 
     }
 
 let printGrid (grid: Grid) : Grid =
-    printfn ""
     grid.Items
     |> List.iter GridItem.print
 
+    printfn ""
+    grid
+
+let charToCharacterMap (grid: Grid) : Map<char, GridItem> =
+    grid.Items
+    |> List.fold
+        (fun acc gridItem ->
+            match gridItem with
+            | LineBreak -> acc
+            | Character (c, _) ->
+                acc
+                |> Map.add c gridItem
+        )
+        Map.empty
+
+let printKeyboardForGrid (grid: Grid) : Grid =
+    let gridCharToCharacterMap = charToCharacterMap grid
+
+    ['A' .. 'Z']
+    |> List.iter
+        (fun ch ->
+            let maybeCharacterOfGrid = Map.tryFind ch gridCharToCharacterMap
+
+            maybeCharacterOfGrid
+            |> Option.defaultValue (GridItem.charToCharacter None ch)
+            |> GridItem.print
+        )
+    printfn ""
     grid
