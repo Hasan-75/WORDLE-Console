@@ -87,6 +87,8 @@ let startRound (wordLength: int) (answer: string) (totalRound: int) (wordList: l
             input()
             |> capitalize
 
+        printfn ""
+
         match validate wordList guess with
         | Ok ->
             let updatedGrid =
