@@ -81,6 +81,8 @@ let startRound (wordLength: int) (answer: string) (totalRound: int) (wordList: l
         |> stringToCharIndexMap
 
     let rec nextRound (currentRound: int) (currentGrid: Grid) =
+        printfn ""
+
         let guess =
             input()
             |> capitalize
@@ -92,6 +94,7 @@ let startRound (wordLength: int) (answer: string) (totalRound: int) (wordList: l
                 |> calculateColor answerCharIndexMap
                 |> updateGrid currentRound currentGrid
                 |> printGrid
+                |> printKeyboardForGrid
 
             calculateResult guess answer currentRound totalRound
             |> function
