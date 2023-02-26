@@ -31,3 +31,11 @@ let charToGreenCharacter = charToCharacter (Some ConsoleColor.Green)
 let charToYellowCharacter = charToCharacter (Some ConsoleColor.Yellow)
 
 let charToGrayCharacter = charToCharacter (Some ConsoleColor.DarkGray)
+
+let gridItemToAbstractItem =
+    function
+    | LineBreak                                 -> "\n"
+    | Character (_, Some ConsoleColor.Green)    -> "\U0001F7E9"
+    | Character (_, Some ConsoleColor.Yellow)   -> "\U0001F7E8"
+    | Character (_, Some ConsoleColor.DarkGray) -> "\U0001f533"
+    | _                                         -> ""

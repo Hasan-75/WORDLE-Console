@@ -6,7 +6,7 @@ open GridItem
 open System
 
 type Result =
-    | Solved  of round: int
+    | Solved  of round: int * grid: Grid
     | StillOn of round: int
     | Lost
 
@@ -66,9 +66,9 @@ let calculateColor (answerCharIndexMap: Map<char, int>) (guess: string) : list<G
                 |> Option.defaultValue (GridItem.charToGrayCharacter c)
         )
 
-let calculateResult (guess: string) (answer: string) (playedRound: int) (totalRound: int) =
+let calculateResult (guess: string) (answer: string) (playedRound: int) (totalRound: int) (grid: Grid) =
     match guess = answer with
-    | true  -> Solved playedRound
+    | true  -> Solved (playedRound, grid)
     | false ->
         match (playedRound + 1) >= totalRound with
         | true  -> Lost
@@ -98,9 +98,9 @@ let startRound (wordLength: int) (answer: string) (totalRound: int) (wordList: l
                 |> printGrid
                 |> printKeyboardForGrid
 
-            calculateResult guess answer currentRound totalRound
+            calculateResult guess answer currentRound totalRound updatedGrid
             |> function
-                | Solved round  -> Solved round
+                | Solved (round, grid)  -> Solved (round, grid)
                 | StillOn round -> nextRound (round + 1) updatedGrid
                 | Lost          -> Lost
 
@@ -145,10 +145,16 @@ let startGame() : unit =
         |> startRound config.WordLength randomWord config.RowNumber wordList
 
     match result with
-    | Solved r ->
-        sprintf "\nCongrats! you've solved the puzzle at %i guess! \n" (r + 1)
+    | Solved (round, grid) ->
+        sprintf "\nCongrats! you've solved the puzzle at %i guess! \n" (round + 1)
         |> printColored ConsoleColor.Green
+
+        grid
+        |> printAbstractGrid
+        |> ignore
+
     | Lost ->
         sprintf "\nGame over! The word was %s. Better luck next time... \n" randomWord
         |> printColored ConsoleColor.Red
+
     | _ -> ()

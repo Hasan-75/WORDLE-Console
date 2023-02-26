@@ -42,7 +42,7 @@ let input() : string =
 
 let containsAlphabetsOnly (text: string) : bool =
     text
-    |> Seq.forall (fun c -> System.Char.IsLetter(c))
+    |> Seq.forall (System.Char.IsLetter)
 
 let doesContainUniqueCharacters (text: string) : bool =
     text
