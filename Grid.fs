@@ -10,7 +10,7 @@ type Grid = {
 
 let stringToGridRow (s: string) : list<GridItem> =
     s
-    |> Seq.map (fun c -> GridItem.charToCharacter None c)
+    |> Seq.map (GridItem.charToCharacter None)
     |> List.ofSeq
     |> fun li -> li @ [LineBreak]
 
@@ -69,4 +69,17 @@ let printKeyboardForGrid (grid: Grid) : Grid =
             |> GridItem.print
         )
     printfn ""
+    grid
+
+let printAbstractGrid (grid: Grid) =
+    let originalEncoding = System.Text.Encoding.UTF8
+
+    System.Console.OutputEncoding <- System.Text.Encoding.UTF8
+
+    grid.Items
+    |> List.map (gridItemToAbstractItem >> printf "%s")
+    |> ignore
+
+    System.Console.OutputEncoding <- originalEncoding
+
     grid
